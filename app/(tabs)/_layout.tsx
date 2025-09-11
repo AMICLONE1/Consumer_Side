@@ -1,0 +1,12 @@
+import { Tabs } from "expo-router";
+
+export default function RootLayout() {
+  return (
+    <Tabs>
+      <Tabs.Screen name="home" options={{ headerShown: false }} />
+      <Tabs.Screen name="dashboard" options={{ headerShown: false }} />
+      <Tabs.Screen name="wallet" options={{ headerShown: false }} />
+    </Tabs>
+  );
+  
+}
