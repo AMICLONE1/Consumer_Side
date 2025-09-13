@@ -1,31 +1,38 @@
+import EnergyCard from "@/components/EnergyCard";
+import Marketplace from "@/components/MarketplaceCard";
 import ScreenWrapper from "@/components/ScreenWrapper";
 import { supabase } from "@/lib/supabase";
 import AntDesign from "@expo/vector-icons/AntDesign";
-import { LinearGradient } from "expo-linear-gradient";
+import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  Alert,
+  ActivityIndicator,
+  FlatList,
   Pressable,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 
 export default function Home() {
   const router = useRouter();
   const [name, setName] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [status, setStatus] = useState<"online" | "offline">("online");
 
   // Fetch profile from Supabase
   useEffect(() => {
-    const getProfile = async () => {
+    const fetchProfile = async () => {
       const {
         data: { user },
         error: userError,
       } = await supabase.auth.getUser();
 
-      if (userError || !user) return;
+      if (userError || !user) {
+        setLoading(false);
+        return;
+      }
 
       const { data, error } = await supabase
         .from("profiles")
@@ -38,43 +45,64 @@ export default function Home() {
       } else {
         setName(user.email ?? "Guest");
       }
+
+      setLoading(false);
     };
 
-    getProfile();
+    fetchProfile();
   }, []);
-
-  const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      Alert.alert("Error", error.message);
-    } else {
-      router.replace("/login");
-    }
-  };
 
   return (
     <ScreenWrapper bg="white" barStyle="dark">
-      {/* Header Home */}
+      {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.push("/profiles")} style={styles.icon}>
+        <Pressable
+          onPress={() => router.push("/profiles")}
+          style={styles.iconButton}
+        >
           <AntDesign name="user" size={30} color="black" />
         </Pressable>
-        <Text style={styles.title}>Hello {name ?? "..."}</Text>
+
+        {loading ? (
+          <ActivityIndicator size="small" color="#2b6be4" />
+        ) : (
+          <Text style={styles.title}>Hello {name ?? "..."}</Text>
+        )}
       </View>
 
-      {/* Logout Button */}
-      <View style={{ alignItems: "center", paddingTop: 40 }}>
-        <TouchableOpacity onPress={handleLogout}>
-          <LinearGradient
-            colors={["#4cafef", "#2b6be4"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.button}
-          >
-            <Text style={styles.buttonText}>Logout</Text>
-          </LinearGradient>
-        </TouchableOpacity>
+      {/* Status Bar */}
+      <View style={styles.statusCard}>
+        <View>
+          <Text style={styles.label}>Net Income Today</Text>
+          <Text style={styles.value}>₹2000</Text>
+        </View>
+
+        <View style={styles.statusRow}>
+          <Text style={styles.label}>Status:</Text>
+          <FontAwesome6
+            name="circle-dot"
+            size={20}
+            color={status === "online" ? "green" : "red"}
+            style={{ marginLeft: 8 }}
+          />
+        </View>
       </View>
+
+      {/* Content with FlatList */}
+      <FlatList
+        data={[1]} // dummy data, since UI is static
+        renderItem={null}
+        keyExtractor={(item) => item.toString()}
+        ListHeaderComponent={
+          <>
+            <EnergyCard />
+            <Text style={styles.sectionTitle}>Nearby Marketplace Listing</Text>
+            <Marketplace />
+          </>
+        }
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      />
     </ScreenWrapper>
   );
 }
@@ -83,10 +111,10 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
-    marginBottom: 20,
+    paddingHorizontal: 16,
+    marginBottom: 12,
   },
-  icon: {
+  iconButton: {
     marginRight: 16,
   },
   title: {
@@ -94,21 +122,42 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "black",
   },
-  button: {
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 40,
+  statusCard: {
+    backgroundColor: "#f5f9ff",
+    padding: 20,
+    borderRadius: 16,
+    marginHorizontal: 20,
+    marginTop: 10,
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-    justifyContent: "center",
     shadowColor: "#000",
+    shadowOpacity: 0.08,
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  buttonText: {
+  label: {
+    fontSize: 14,
+    color: "#555",
+  },
+  value: {
     fontSize: 18,
-    fontWeight: "600",
-    color: "white",
+    fontWeight: "700",
+    color: "#2b6be4",
+  },
+  statusRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  scrollContent: {
+    paddingBottom: 30,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "black",
+    marginHorizontal: 20,
+    marginVertical: 16,
   },
 });
