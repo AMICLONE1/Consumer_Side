@@ -29,33 +29,25 @@ const SignUp = () => {
     }
 
     setLoading(true);
+
+    // signup + pass displayName into user_metadata
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password: password.trim(),
+      options: {
+        data: {
+          displayName: name.trim(),
+        },
+      },
     });
 
+    setLoading(false);
+
     if (error) {
-      setLoading(false);
       Alert.alert("Signup Failed", error.message);
       return;
     }
 
-    // Insert profile record
-    if (data.user) {
-      const { error: profileError } = await supabase.from("profiles").insert([
-        {
-          id: data.user.id,
-          name: name.trim(),
-          email: email.trim(),
-        },
-      ]);
-
-      if (profileError) {
-        console.log("Profile insert error:", profileError);
-      }
-    }
-
-    setLoading(false);
     Alert.alert("Success", "Welcome 🎉");
     router.replace("/home");
   };
